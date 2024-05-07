@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var rootWord = ""
     @State private var newWord = ""
     
+    @State private var score = 0
+    
     @State private var errorTitle = ""
     @State private var errorMessage = ""
     @State private var showingError = false
@@ -32,6 +34,9 @@ struct ContentView: View {
                         }
                     }
                 }
+                Section {
+                    Text("Score: \(score)")
+                }
             }
             .navigationTitle("Root word: \(rootWord)")
             .onSubmit(addNewWord)
@@ -39,13 +44,25 @@ struct ContentView: View {
             .alert(errorTitle, isPresented: $showingError) { } message: {
                 Text(errorMessage)
             }
+            .toolbar{
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("New Game") {
+                        startGame()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Reset Score") {
+                        score = 0
+                    }
+                }
+            }
         }
     }
     
     func addNewWord() {
         let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
-        guard answer.count > 0 else {
+        guard answer.count > 2 && answer != rootWord.lowercased() else {
             return
         }
         
@@ -66,8 +83,13 @@ struct ContentView: View {
         
         withAnimation {
             usedWords.insert(answer, at: 0) // to show them on top of the list
+            score += calculateScore(word: answer)
         }
         newWord = ""
+    }
+    
+    func calculateScore(word: String) -> Int {
+        word.count
     }
     
     func startGame() {
@@ -75,6 +97,7 @@ struct ContentView: View {
             if let startWords = try? String(contentsOf: startWordsURL) {
                 let allWords = startWords.components(separatedBy: "\n") // this is an optional
                 rootWord = allWords.randomElement() ?? "silkworm" // random 8-letter word
+                usedWords = []
                 return
             }
         }
